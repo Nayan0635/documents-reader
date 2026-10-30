@@ -1,0 +1,29 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+
+
+# Python cache & bytecode
+*.py[cod]
+*$py.class
+*.so
+
+# IDE & Editor files
+.vscode/
+
+
+private*
+database/
+/documents/

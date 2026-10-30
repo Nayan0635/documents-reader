@@ -1,0 +1,28 @@
+[project]
+name = "documents-reader"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Nayan Manna", email = "nayanmanna0@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "chromadb>=1.5.9",
+    "google-genai>=2.34.0",
+    "langchain-text-splitters>=1.1.3",
+    "mcp[cli]>=2,<3",
+    "openai>=3.41.0",
+    "openpyxl>=3.1.5",
+    "pandas>=3.1.0",
+    "pypdf>=6.21.4",
+    "python-docx>=1.2.0",
+    "python-dotenv>=1.2.4",
+]
+
+[project.scripts]
+documents-reader = "documents_reader:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
