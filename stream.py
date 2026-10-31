@@ -6,7 +6,12 @@ import streamlit as st
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from mcp import Client
 
-from _ingest import DAILY_BUDGET, build_chunks, ingest
+import math
+import statistics
+
+
+from test.chunk_counts import DAILY_BUDGET, MAX_CHUNK, TPM_LIMIT, build_chunks
+from _ingest import ingest
 from agent import MAX_STEPS, SYSTEM_PROMPT, llm, server
 from loaders import load_file
 from core import vector_store
@@ -45,11 +50,29 @@ def inspect_upload(uploaded_file):
     if not text or not text.strip():
         raise ValueError("No text could be extracted from this file.")
 
-    chunks = build_chunks(text)
+    chunks, chunk_size = build_chunks(text)
     if not chunks:
         raise ValueError("The file did not produce any text chunks.")
 
-    return len(chunks)
+    lengths = [len(c) for c in chunks]
+    est_tokens = sum(lengths) / 4
+    est_minutes = est_tokens / (TPM_LIMIT * 0.9)
+    days = math.ceil(len(chunks) / DAILY_BUDGET)
+
+    return {
+        "characters": len(text),
+        "chunk_size": chunk_size,
+        "chunk_overlap": chunk_size // 10,
+        "requests": len(chunks),
+        "min_chunk": min(lengths),
+        "avg_chunk": int(statistics.mean(lengths)),
+        "max_chunk": max(lengths),
+        "tiny_chunks": sum(1 for n in lengths if n < 100),
+        "est_tokens": int(est_tokens),
+        "est_minutes": est_minutes,
+        "days": days,
+        "feasible": len(chunks) <= DAILY_BUDGET,
+    }
 
 
 def embed_upload(uploaded_file):
@@ -152,15 +175,15 @@ with st.sidebar:
                 with st.spinner("Checking files and estimating chunks..."):
                     for file in uploaded_files:
                         try:
-                            count = inspect_upload(file)
+                            stats = inspect_upload(file)
                             checks[file.name] = {
-                                "chunks": count,
+                                "stats": stats,
                                 "error": None,
                             }
-                            total_chunks += count
+                            total_chunks += stats["requests"]
                         except Exception as exc:
                             checks[file.name] = {
-                                "chunks": None,
+                                "stats": None,
                                 "error": str(exc),
                             }
 
@@ -180,7 +203,18 @@ with st.sidebar:
                         all_valid = False
                         st.error(f"{filename}: {result['error']}")
                     else:
-                        st.write(f"📄 {filename}: {result['chunks']:,} chunks")
+                        stats = result["stats"]
+                        st.markdown(f"**{filename}**")
+                        status_text = (
+                            "✅ POSSIBLE: this file fits in one day's quota."
+                            if stats["feasible"]
+                            else f"❌ NOT POSSIBLE in one day ({stats['requests']:,} requests needed)."
+                        )
+                        st.text(
+                            f"Characters        : {stats['characters']:,}\n"
+                            f"Chunks (requests) : {stats['requests']:,}  (daily budget {DAILY_BUDGET:,})\n"
+                            f"{status_text}"
+                        )
 
                 total = check["total_chunks"]
                 st.caption(
