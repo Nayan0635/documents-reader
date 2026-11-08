@@ -112,3 +112,11 @@ documents-reader/
 ```
 
 **Note:** Documents and ChromaDB data are stored locally. Keep your API key private and never commit `.env`.
+
+## 🚀 Live Demo
+
+**Try the application here:**
+
+👉 [Documents Reader - Live Application](https://nayan0635-documents-reader-streamlit-app-wwbxv2.streamlit.app/)
+
+The application is deployed using **Streamlit Community Cloud**.
